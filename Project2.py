@@ -115,7 +115,7 @@ def activation_function(data_point, weights, function_type):
     net_val += data_point[1] * weights[1]
     net_val += data_point[2] * weights[2]
 
-    if function_type == 'hard':
+    if function_type == 'Hard':
         if net_val > 0:
             return 1
         else:
@@ -124,31 +124,6 @@ def activation_function(data_point, weights, function_type):
         gain_val = 0.1
         soft_result = 1 / (1 + (math.exp(-1 * gain_val * net_val)))
         return soft_result
-
-
-def guesser(guesser_data_point, passed_weights):
-    guess_net_val = 0
-    guess_net_val += guesser_data_point[0] * passed_weights[0]
-    guess_net_val += guesser_data_point[1] * passed_weights[1]
-    guess_net_val += guesser_data_point[2] * passed_weights[2]
-
-    if guess_net_val > 0:
-        return 1
-    else:
-        return 0
-
-
-def tester(tester_data, a_weights):
-    evaluated_predictions = []
-    height_vals = tester_data[0]
-    weight_vals = tester_data[1]
-    bias_vals = tester_data[2]
-    length = len(height_vals)
-    for v in range(length):
-        values_being_passed = [height_vals[v], weight_vals[v], bias_vals[v]]
-        prediction = guesser(values_being_passed, a_weights)
-        evaluated_predictions.append(prediction)
-    return evaluated_predictions
 
 
 def train(function_type, passed_data, p_weights, alpha, constant):
@@ -175,32 +150,37 @@ def train(function_type, passed_data, p_weights, alpha, constant):
     return p_weights
 
 
-# what_graph = str(input("Type A, B, C as the data set you want to use:"))
-# what_graph.strip()
-# function_selection = str(input("Type hard or soft as the choice of functionality:"))
-# function_selection.strip()
-# training_percentage = str(input("What do you want the training percentage to be 75% or 25%"))
-# training_percentage.strip()
-# testing_percentage = 100 - int(training_percentage)
-# training_file_name = what_graph + '.' + function_selection + '.Training' + training_percentage
-# testing_file_name = what_graph + '.' + function_selection + '.Testing' + testing_percentage
+what_graph = str(input("Type A, B, C as the data set you want to use:"))
+what_graph = what_graph.strip().upper()
+function_selection = str(input("Type hard or soft as the choice of functionality:"))
+function_selection = function_selection.strip().lower().capitalize()
+training_percentage = str(input("What do you want the training percentage to be 75% or 25%"))
+training_percentage.strip()
+testing_percentage = 100 - int(training_percentage)
+training_file_name = what_graph + '.' + function_selection + '.Training' + training_percentage
+testing_file_name = what_graph + '.' + function_selection + '.Testing' + str(testing_percentage)
 
-a_epsilon = .00005
-c_epsilon = 1450
-b_epsilon = 100
 
 # --------------------------------------------------------------------------------------------
 a_data, b_data, c_data = normalize()
-TrainingData, TestingData = get_training_testing_data(c_data, 25)
+if what_graph == 'A':
+    epsilon = .00005
+    data = a_data
+elif what_graph == 'B':
+    epsilon = 100
+    data = b_data
+else:
+    epsilon = 1450
+    data = c_data
+TrainingData, TestingData = get_training_testing_data(data, training_percentage)
 
 weights = [random.uniform(-.5, .5), random.uniform(-.5, .5), random.uniform(-.5, .5)]
-perceptron = train('hard', TrainingData, weights, 0.1, c_epsilon)  # -------------------------change this
+perceptron = train(function_selection, TrainingData, weights, 0.1, epsilon)  # -------------------------change this
 print 'Final Weights are as follows: [Height_weight, Weight_weight, Bias_weight]'
 print '[' + str(perceptron[0]) + ' , ' + str(perceptron[1]) + ' , ' + str(perceptron[2]) + ']\n\n'
 
 slope = perceptron[0] / perceptron[1] * -1
 y_intercept = (perceptron[2] / (-1 * perceptron[1]))
-# x_intercept = ((-y_intercept) / (-1 * perceptron[0] / perceptron[1]))
 x_intercept = ((-y_intercept) / slope)
 # ----------------------------------------------------------------------------------------------
 
@@ -217,7 +197,7 @@ for i in range(len(gender_for_training)):
     else:
         female.append(i)
 plt.figure(0)
-plt.title('Group B: Soft Activation 25% Training')
+plt.title('Group ' + what_graph + ': Activation ' + str(training_percentage) + '% Training')
 plt.xlabel('Height (ft)')
 plt.ylabel('Weight (lbs)')
 
@@ -260,6 +240,8 @@ b = float(len(womenAboveLine))
 # accuracy = a+d/a+b+c+d
 # error = 1 - accuracy
 
+
+print 'Group ' + what_graph + ': Activation ' + str(training_percentage) + '% Training'
 print("               Predicted Female   Predicted Male")
 print("------------------------------------------------")
 print("Actual Female     " + str(a) + "                 " + str(b))
@@ -276,7 +258,7 @@ print("False Positive Rate: " + str((float(c) / (float(c) + float(d)))))
 print("True Negative Rate: " + str((float(d) / (float(c) + float(d)))))
 print("False Negative Rate: " + str((float(b) / (float(a) + float(b)))))
 print("Accuracy: " + str(((float(a) + float(d)) / (float(a) + float(b) + float(c) + float(d))) * 100) + "%")
-print("Error: " + str(((1 - ((float(a) + float(d)) / (float(a) + float(b) + float(c) + float(d)))) * 100)) + "%")
+print("Error: " + str(((1 - ((float(a) + float(d)) / (float(a) + float(b) + float(c) + float(d)))) * 100)) + "%\n\n")
 
 # ## Group B
 
@@ -294,7 +276,7 @@ plt.rcParams["figure.figsize"] = (10, 10)
 
 plt.plot([0, y_intercept], [x_intercept, 0], color='black', linewidth=1)
 
-plt.savefig('Hard.C.Train25.png')
+plt.savefig(function_selection + '.' + what_graph.upper() + '.Train' + str(training_percentage) + '.png')
 
 nArray2 = [TestingData[0], TestingData[1], TestingData[3]]
 gender_Testing = nArray2[2]
@@ -309,7 +291,7 @@ for i in range(len(gender_Testing)):
     else:
         female_Testing.append(i)
 plt.figure(1)
-plt.title('Group B: Soft Activation 75% Testing')
+plt.title('Group ' + what_graph + ': Activation ' + str(training_percentage) + '% Testing')
 plt.xlabel('Height (ft)')
 plt.ylabel('Weight (lbs)')
 
@@ -352,6 +334,7 @@ b_Testing = float(len(womenAboveLine_Testing))
 # accuracy = a+d/a+b+c+d
 # error = 1 - accuracy
 
+print 'Group ' + what_graph + ': Activation ' + str(training_percentage) + '% Testing'
 print("               Predicted Female   Predicted Male")
 print("------------------------------------------------")
 print("Actual Female     " + str(a_Testing) + "                 " + str(b_Testing))
@@ -377,4 +360,4 @@ y_intercept = (perceptron[2] / (-1 * perceptron[1]))
 x_intercept = ((-y_intercept) / (-1 * perceptron[0] / perceptron[1]))
 plt.plot([0, y_intercept], [x_intercept, 0], color='black', linewidth=1)
 
-plt.savefig('Hard.C.Test75.png')
+plt.savefig(function_selection + '.' + what_graph.upper() + '.Test' + str(testing_percentage) + '.png')
