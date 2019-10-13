@@ -1,9 +1,6 @@
 import math
 import random
 import csv
-import matplotlib
-
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -61,7 +58,7 @@ def normalize():
     return group_a_data, group_b_data, group_c_data
 
 
-def get_training_testing_data(inputs, training_percentage):
+def get_training_testing_data(inputs, passed_training_percentage):
     men_dictionary = {}
     female_dictionary = {}
     training_data = [[], [], [], []]
@@ -71,7 +68,7 @@ def get_training_testing_data(inputs, training_percentage):
     passed_bias = inputs[2]
     passed_genders = inputs[3]
 
-    if training_percentage == 75:
+    if passed_training_percentage == 75:
         training_data_amount = 1500
     else:
         training_data_amount = 500
@@ -109,11 +106,11 @@ def get_training_testing_data(inputs, training_percentage):
     return training_data, testing_data
 
 
-def activation_function(data_point, weights, function_type):
+def activation_function(data_point, passed_weights, function_type):
     net_val = 0
-    net_val += data_point[0] * weights[0]
-    net_val += data_point[1] * weights[1]
-    net_val += data_point[2] * weights[2]
+    net_val += data_point[0] * passed_weights[0]
+    net_val += data_point[1] * passed_weights[1]
+    net_val += data_point[2] * passed_weights[2]
 
     if function_type == 'Hard':
         if net_val > 0:
@@ -128,7 +125,7 @@ def activation_function(data_point, weights, function_type):
 
 def train(function_type, passed_data, p_weights, alpha, constant):
     height_data = passed_data[0]
-    wieht_data = passed_data[1]
+    weight_data = passed_data[1]
     bias_data = passed_data[2]
     gender_data = passed_data[3]
     length = len(height_data)
@@ -136,18 +133,55 @@ def train(function_type, passed_data, p_weights, alpha, constant):
         total_error_calc = 0
         for p in range(length):
             height_point = height_data[p]
-            actual_weight = wieht_data[p]
+            actual_weight = weight_data[p]
             bias_point = bias_data[p]
             arr = [height_point, actual_weight, bias_point]
             output = activation_function(arr, p_weights, function_type)
             error = int(gender_data[p]) - output
             total_error_calc += math.pow(error, 2)
             p_weights[0] += alpha * error * height_data[p]
-            p_weights[1] += alpha * error * wieht_data[p]
+            p_weights[1] += alpha * error * weight_data[p]
             p_weights[2] += alpha * error * bias_data[p]
         if total_error_calc <= constant:
             break
     return p_weights
+
+
+def print_confusion_matrix(women_above_line, women_below_line, men_above_line, men_below_line):
+    # true positives = women below line = a
+    true_positives = len(women_below_line)
+    # true negatives = men above line = d
+    true_negatives = len(men_above_line)
+    # false positives = men below line = c
+    false_positives = len(men_below_line)
+    # false negatives = women above line = b
+    false_negatives = len(women_above_line)
+    # true positive rate = a/a+b
+    # false positive rate = c/c+d
+    # true negative rate = d/c+d
+    # false negative rate = b/a+b
+    # accuracy = a+d/a+b+c+d
+    # error = 1 - accuracy
+
+    print("               Predicted Female   Predicted Male")
+    print("------------------------------------------------")
+    print("Actual Female     " + str(true_positives) + "                 " + str(false_negatives))
+    print("------------------------------------------------")
+    print("Actual Male       " + str(false_positives) + "                 " + str(true_negatives))
+
+    print("\n")
+    print("True Positives: " + str(true_positives))
+    print("True Negatives: " + str(true_negatives))
+    print("False Positives: " + str(false_positives))
+    print("False Negatives: " + str(false_negatives))
+    print("True Positive Rate: " + str((true_positives / (true_positives + false_negatives))))
+    print("False Positive Rate: " + str((false_positives / (false_positives + true_negatives))))
+    print("True Negative Rate: " + str((true_negatives / (false_positives + true_negatives))))
+    print("False Negative Rate: " + str((false_negatives / (true_positives + false_negatives))))
+    print("Accuracy: " + str(((true_positives + true_negatives) / (true_positives + false_negatives + false_positives
+                                                                   + true_negatives)) * 100) + "%")
+    print("Error: " + str(((1 - ((true_positives + true_negatives) / (true_positives + false_negatives + false_positives
+                                                                      + true_negatives))) * 100)) + "%")
 
 
 what_graph = str(input("Type A, B, C as the data set you want to use:"))
@@ -159,7 +193,6 @@ training_percentage.strip()
 testing_percentage = 100 - int(training_percentage)
 training_file_name = what_graph + '.' + function_selection + '.Training' + training_percentage
 testing_file_name = what_graph + '.' + function_selection + '.Testing' + str(testing_percentage)
-
 
 # --------------------------------------------------------------------------------------------
 a_data, b_data, c_data = normalize()
@@ -176,8 +209,8 @@ TrainingData, TestingData = get_training_testing_data(data, training_percentage)
 
 weights = [random.uniform(-.5, .5), random.uniform(-.5, .5), random.uniform(-.5, .5)]
 perceptron = train(function_selection, TrainingData, weights, 0.1, epsilon)  # -------------------------change this
-print 'Final Weights are as follows: [Height_weight, Weight_weight, Bias_weight]'
-print '[' + str(perceptron[0]) + ' , ' + str(perceptron[1]) + ' , ' + str(perceptron[2]) + ']\n\n'
+print('Final Weights are as follows: [Height_weight, Weight_weight, Bias_weight]')
+print('[' + str(perceptron[0]) + ' , ' + str(perceptron[1]) + ' , ' + str(perceptron[2]) + ']\n\n')
 
 slope = perceptron[0] / perceptron[1] * -1
 y_intercept = (perceptron[2] / (-1 * perceptron[1]))
@@ -225,44 +258,10 @@ for index in female:
         # Since arbitrary line was chosen, points that fell on the line were added to the "above line" list
         womenAboveLine.append(weightsVals_for_training[index])
 
-# true positives = women below line = a
-a = float(len(womenBelowLine))
-# true negatives = men above line = d
-d = float(len(menAboveLine1))
-# false positives = men below line = c
-c = float(len(menBelowLine1))
-# false negatives = women above line = b
-b = float(len(womenAboveLine))
-# true positive rate = a/a+b
-# false positive rate = c/c+d
-# true negative rate = d/c+d
-# false negative rate = b/a+b
-# accuracy = a+d/a+b+c+d
-# error = 1 - accuracy
 
+print('Group ' + what_graph + ': Activation ' + str(training_percentage) + '% Training')
+print_confusion_matrix(womenAboveLine, womenBelowLine, menAboveLine1, menBelowLine1)
 
-print 'Group ' + what_graph + ': Activation ' + str(training_percentage) + '% Training'
-print("               Predicted Female   Predicted Male")
-print("------------------------------------------------")
-print("Actual Female     " + str(a) + "                 " + str(b))
-print("------------------------------------------------")
-print("Actual Male       " + str(c) + "                 " + str(d))
-
-print("\n")
-print("True Positives: " + str(a))
-print("True Negatives: " + str(d))
-print("False Positives: " + str(c))
-print("False Negatives: " + str(b))
-print("True Positive Rate: " + str(float(a) / (float(a) + float(b))))
-print("False Positive Rate: " + str((float(c) / (float(c) + float(d)))))
-print("True Negative Rate: " + str((float(d) / (float(c) + float(d)))))
-print("False Negative Rate: " + str((float(b) / (float(a) + float(b)))))
-print("Accuracy: " + str(((float(a) + float(d)) / (float(a) + float(b) + float(c) + float(d))) * 100) + "%")
-print("Error: " + str(((1 - ((float(a) + float(d)) / (float(a) + float(b) + float(c) + float(d)))) * 100)) + "%\n\n")
-
-# ## Group B
-
-# In[22]:
 
 plt.legend((male_plot, female_plot),
            ('Male', 'Female'),
@@ -319,41 +318,9 @@ for index in female_Testing:
         # Since arbitrary line was chosen, points that fell on the line were added to the "above line" list
         womenAboveLine_Testing.append(weightVals_Testing[index])
 
-# true positives = women below line = a
-a_Testing = float(len(womenBelowLine_Testing))
-# true negatives = men above line = d
-d_Testing = float(len(menAboveLine_Testing))
-# false positives = men below line = c
-c_Testing = float(len(menBelowLine_Testing))
-# false negatives = women above line = b
-b_Testing = float(len(womenAboveLine_Testing))
-# true positive rate = a/a+b
-# false positive rate = c/c+d
-# true negative rate = d/c+d
-# false negative rate = b/a+b
-# accuracy = a+d/a+b+c+d
-# error = 1 - accuracy
 
-print 'Group ' + what_graph + ': Activation ' + str(training_percentage) + '% Testing'
-print("               Predicted Female   Predicted Male")
-print("------------------------------------------------")
-print("Actual Female     " + str(a_Testing) + "                 " + str(b_Testing))
-print("------------------------------------------------")
-print("Actual Male       " + str(c_Testing) + "                 " + str(d_Testing))
-
-print("\n")
-print("True Positives: " + str(a_Testing))
-print("True Negatives: " + str(d_Testing))
-print("False Positives: " + str(c_Testing))
-print("False Negatives: " + str(b_Testing))
-print("True Positive Rate: " + str(float(a_Testing) / (float(a_Testing) + float(b_Testing))))
-print("False Positive Rate: " + str((float(c_Testing) / (float(c_Testing) + float(d_Testing)))))
-print("True Negative Rate: " + str((float(d_Testing) / (float(c_Testing) + float(d_Testing)))))
-print("False Negative Rate: " + str((float(b_Testing) / (float(a_Testing) + float(b_Testing)))))
-print("Accuracy: " + str(((float(a_Testing) + float(d_Testing)) / (
-        float(a_Testing) + float(b_Testing) + float(c_Testing) + float(d_Testing))) * 100) + "%")
-print("Error: " + str(((1 - ((float(a_Testing) + float(d_Testing)) / (
-        float(a_Testing) + float(b_Testing) + float(c_Testing) + float(d_Testing)))) * 100)) + "%")
+print('\n\nGroup ' + what_graph + ': Activation ' + str(training_percentage) + '% Testing')
+print_confusion_matrix(womenAboveLine_Testing, womenBelowLine_Testing, menAboveLine_Testing, menBelowLine_Testing)
 
 plt.rcParams["figure.figsize"] = (10, 10)
 y_intercept = (perceptron[2] / (-1 * perceptron[1]))
